@@ -1,0 +1,43 @@
+/*
+* {
+    border-style: solid;
+}
+*/
+#gameBox {
+    margin: 40px;
+    border-color: red;
+
+    display: flex;
+    justify-content: center;
+}
+#canvasBox {
+    border-color: seagreen;
+    margin-right: 10px;
+}
+#drawCanvas {
+    background-color: white;
+    display: block;
+    margin: 10px;
+
+    border-style: solid;
+    border-radius: 7px;
+    border-width: 3px;
+    border-color: black;
+}
+#chatBox {
+    border-color: salmon;
+    margin-left: 10px;
+}
+#chatContainer {
+    background-color: white;
+    width: 360px;
+    height: 450px;
+
+    border-style: solid;
+    border-width: 2px;
+    border-color: black;
+}
+#chatInput {
+    border: none;
+    width: 360px;
+}

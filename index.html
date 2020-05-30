@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>drawit</title>
+    <script defer src="http://localhost:3000/socket.io/socket.io.js"></script>
+    <script defer src="game_client.js"></script>
+    <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+
+<body style="background-color: lightblue;">
+    <div id="gameBox">
+        <div id="canvasBox">
+            <canvas id="drawCanvas" width="720" height="480"></canvas>
+        </div>
+        <div id="chatBox">
+            <div id="chatContainer">This is the chat container!</div>
+            <form id="chatForm">
+                <input type="text" id="chatInput" autocomplete="off">
+            </form>
+        </div>
+    </div>
+</body>
+
+</html>
