@@ -40,12 +40,25 @@
     border-width: 2px;
     border-color: black;
 }
+.messageBox {
+    font: Courier;
+    margin-left: 5px;
+    margin-right: 5px;
+    word-wrap: break-word;
+}
 #chatInput {
     border: none;
     width: 360px;
 }
-.messageBox {
-    margin-left: 5px;
-    margin-right: 5px;
-    word-wrap: break-word;
+#clearButton {
+    width: 100%;
+    border: solid 2px rgb(58, 58, 58);
+    background-color: darkgray;
+    text-align: center;
+}
+#clearButton:hover {
+    background-color: rgb(138, 138, 138);
+}
+#clearButton:active {
+    background-color: rgb(117, 117, 117);
 }

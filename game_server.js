@@ -13,6 +13,7 @@ mainIO.on("connection", (socket) => {
     socket.emit("serverLogSignal", "Hello new user!");
 
     // Set listeners for events emitted by this socket (user)
+    // Chat signals
     socket.on("newUserSignal", (name) => {
         NAMES[socket.id] = name;
         console.log(`New user: ${name} (socket ID = ${socket.id})`);
@@ -25,5 +26,18 @@ mainIO.on("connection", (socket) => {
         encoded_message = Entities.encode(message);
         socket.emit("broadcastChatMessageSignal", {name: "(you)", message: encoded_message})
         socket.broadcast.emit("broadcastChatMessageSignal", {name: NAMES[socket.id], message: encoded_message});
+    });
+    // Canvas signals
+    socket.on("penDownSignal", (pos) => {
+        socket.broadcast.emit("penDownSignal", pos);
+    });
+    socket.on("penLineSignal", (pos) => {
+        socket.broadcast.emit("penLineSignal", pos);
+    });
+    socket.on("penUpSignal", () => {
+        socket.broadcast.emit("penUpSignal");
+    });
+    socket.on("clearCanvasSignal", () => {
+        socket.broadcast.emit("clearCanvasSignal");
     });
 });
