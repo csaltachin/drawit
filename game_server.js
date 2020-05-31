@@ -17,12 +17,13 @@ mainIO.on("connection", (socket) => {
         NAMES[socket.id] = name;
         console.log(`New user: ${name} (socket ID = ${socket.id})`);
         socket.emit("serverLogSignal", `${name}! That's a nice name!`);
+        mainIO.sockets.emit("broadcastServerMessageSignal", `<i>${Entities.encode(name)} joined!</i>`)
     });
     socket.on("messageSentSignal", (message) => {
         console.log(`New message from ${NAMES[socket.id]} >> ${message}`);
         // Encode message (will be passed in to html field)
         encoded_message = Entities.encode(message);
-        socket.emit("broadcastMessageSignal", {name: "(you)", message: encoded_message})
-        socket.broadcast.emit("broadcastMessageSignal", {name: NAMES[socket.id], message: encoded_message});
+        socket.emit("broadcastChatMessageSignal", {name: "(you)", message: encoded_message})
+        socket.broadcast.emit("broadcastChatMessageSignal", {name: NAMES[socket.id], message: encoded_message});
     });
 });
