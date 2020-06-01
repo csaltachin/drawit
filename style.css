@@ -1,8 +1,9 @@
-/*
 * {
+    font-family: 'Open Sans', sans-serif;
+    /*
     border-style: solid;
+    */
 }
-*/
 #gameBox {
     margin: 40px;
     border-color: red;

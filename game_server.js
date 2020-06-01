@@ -11,6 +11,9 @@ var NAMES = {};
 mainIO.on("connection", (socket) => {
     // Welcome
     socket.emit("serverLogSignal", "Hello new user!");
+    socket.on("disconnect", () => {
+        socket.broadcast.emit("broadcastServerMessageSignal", `<i>${Entities.encode(NAMES[socket.id])} left.</i>`)
+    });
 
     // Set listeners for events emitted by this socket (user)
     // Chat signals

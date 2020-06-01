@@ -9,6 +9,7 @@ const socket = io(`http://${HOSTNAME}:3000`); // Location for socket.io server
 var drawCanvas = document.getElementById("drawCanvas");
 var ctx = drawCanvas.getContext("2d");
 var DRAWING = false;
+var CANVAS_LOCKED = false;
 
 const chatContainer = document.getElementById("chatContainer");
 const chatForm = document.getElementById("chatForm");
@@ -27,6 +28,7 @@ socket.on("broadcastServerMessageSignal", (message) => {
 });
 // Socket.io listening - canvas
 socket.on("penDownSignal", (pos) => {
+    CANVAS_LOCKED = true;
     penDown(pos.x, pos.y);
 });
 socket.on("penLineSignal", (pos) => {
@@ -34,6 +36,7 @@ socket.on("penLineSignal", (pos) => {
 });
 socket.on("penUpSignal", () => {
     penUp();
+    CANVAS_LOCKED = false;
 });
 socket.on("clearCanvasSignal", () => {
     ctx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
@@ -72,20 +75,28 @@ function appendServerMessage(message) {
 
 // Canvas stuff
 drawCanvas.addEventListener("mousedown", (e) => {
-    socket.emit("penDownSignal", {x: e.clientX - drawCanvas.offsetLeft, y: e.clientY - drawCanvas.offsetTop});
-    penDown(e.clientX - drawCanvas.offsetLeft, e.clientY - drawCanvas.offsetTop);
+    if(!CANVAS_LOCKED) {
+        socket.emit("penDownSignal", {x: e.clientX - drawCanvas.offsetLeft, y: e.clientY - drawCanvas.offsetTop});
+        penDown(e.clientX - drawCanvas.offsetLeft, e.clientY - drawCanvas.offsetTop);
+    }
 });
 document.addEventListener("mousemove", (e) => {
-    socket.emit("penLineSignal", {x: e.clientX - drawCanvas.offsetLeft, y: e.clientY - drawCanvas.offsetTop});
-    penLine(e.clientX - drawCanvas.offsetLeft, e.clientY - drawCanvas.offsetTop);
+    if(!CANVAS_LOCKED) {
+        socket.emit("penLineSignal", {x: e.clientX - drawCanvas.offsetLeft, y: e.clientY - drawCanvas.offsetTop});
+        penLine(e.clientX - drawCanvas.offsetLeft, e.clientY - drawCanvas.offsetTop);
+    }
 });
 document.addEventListener("mouseup", (e) => {
-    socket.emit("penUpSignal");
-    penUp();
+    if(!CANVAS_LOCKED) {
+        socket.emit("penUpSignal");
+        penUp();
+    }
 });
 document.getElementById("clearButton").onclick = () => {
-    socket.emit("clearCanvasSignal");
-    ctx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+    if(!CANVAS_LOCKED) {
+        socket.emit("clearCanvasSignal");
+        ctx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+    }
 }
 
 // Canvas helper methods
