@@ -14,7 +14,7 @@ var CANVAS_LOCKED = false;
 const chatContainer = document.getElementById("chatContainer");
 const chatForm = document.getElementById("chatForm");
 const chatInput = document.getElementById("chatInput");
-const NAME = prompt("What's your name?");
+var NAME = prompt("What's your name?");
 
 // Socket.io listening - chat
 socket.on("serverLogSignal", (message) => {
@@ -26,6 +26,10 @@ socket.on("broadcastChatMessageSignal", (data) => {
 socket.on("broadcastServerMessageSignal", (message) => {
     appendServerMessage(message);
 });
+socket.on("nameChangeSignal", (new_name) => {
+    NAME = new_name;
+});
+
 // Socket.io listening - canvas
 socket.on("penDownSignal", (pos) => {
     CANVAS_LOCKED = true;
@@ -46,7 +50,9 @@ socket.on("clearCanvasSignal", () => {
 chatForm.addEventListener("submit", (e) => {
     e.preventDefault();
     let chat_message = chatInput.value;
-    socket.emit("messageSentSignal", chat_message);
+    if(chat_message == "") return;
+    if(chat_message.charAt(0) == "/") socket.emit("commandSentSignal", chat_message);
+    else socket.emit("messageSentSignal", chat_message);
     chatInput.value = ""; // Empty input box after sending chat message
 });
 
@@ -62,9 +68,7 @@ function appendChatMessage(name, message) {
     // Append div
     chatContainer.appendChild(new_div);
     // Update scroll bar if necessary
-    if(atBottom) {
-        chatContainer.scrollTop = chatContainer.scrollHeight;
-    }
+    if(atBottom) chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 function appendServerMessage(message) {
     let new_div = document.createElement("div");
