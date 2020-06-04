@@ -7,6 +7,7 @@
     <script defer src="http://localhost:3000/socket.io/socket.io.js"></script>
     <script defer src="game_client.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Open+Sans&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Comfortaa&display=swap" rel="stylesheet">
     <link rel="stylesheet" type="text/css" href="style.css">
 </head>
 
@@ -14,6 +15,19 @@
     <div id="gameBox">
         <div id="canvasBox">
             <canvas id="drawCanvas" width="720" height="480"></canvas>
+            <div id="penBox">
+                <div id="penColorBox" class="penInputClass">
+                    <input type="color" id="penColorInput" value="#000000">
+                    <label for="penColorInput">Pen color</label>
+                </div>
+                <div id="defaultColorsBox">
+
+                </div>
+                <div id="penSizeBox" class="penInputClass">
+                    <input type="range" id="penSizeInput" min="1" max="25" step="1" value="3" class="penSizeSlider">
+                    <label for="penSizeInput">Pen size</label>
+                </div>
+            </div>
         </div>
         <div id="chatBox">
             <div id="chatContainer">

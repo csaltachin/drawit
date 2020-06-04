@@ -10,11 +10,20 @@ var drawCanvas = document.getElementById("drawCanvas");
 var ctx = drawCanvas.getContext("2d");
 var DRAWING = false;
 var CANVAS_LOCKED = false;
+var PEN_COLOR = "#000000";
+var PEN_SIZE = 3;
 
+const colorPicker = document.getElementById("penColorInput");
+const sizePicker = document.getElementById("penSizeInput");
 const chatContainer = document.getElementById("chatContainer");
 const chatForm = document.getElementById("chatForm");
 const chatInput = document.getElementById("chatInput");
 var NAME = prompt("What's your name?");
+var APPENDED = 0;
+const MESSAGE_BG_COLORS = {
+    red: "#FF5252",
+    green: "#6FFF52"
+}
 
 // Socket.io listening - chat
 socket.on("serverLogSignal", (message) => {
@@ -23,8 +32,8 @@ socket.on("serverLogSignal", (message) => {
 socket.on("broadcastChatMessageSignal", (data) => {
     appendChatMessage(data.name, data.message);
 });
-socket.on("broadcastServerMessageSignal", (message) => {
-    appendServerMessage(message);
+socket.on("broadcastServerMessageSignal", (data) => {
+    appendServerMessage(data.message, data.bg);
 });
 socket.on("nameChangeSignal", (new_name) => {
     NAME = new_name;
@@ -45,6 +54,14 @@ socket.on("penUpSignal", () => {
 socket.on("clearCanvasSignal", () => {
     ctx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
 });
+socket.on("changeColorSignal", (color) => {
+    changeColor(color);
+    colorPicker.value = color;
+});
+socket.on("changeSizeSignal", (size) => {
+    changeSize(size);
+    sizePicker.value = size;
+});
 
 // Chat form listening
 chatForm.addEventListener("submit", (e) => {
@@ -57,24 +74,32 @@ chatForm.addEventListener("submit", (e) => {
 });
 
 // Chat stuff
-function appendChatMessage(name, message) {
+function appendChatMessage(name, message, bg) {
     // Create/append new messageBox div for this message
     let new_div = document.createElement("div");
     new_div.className = "messageBox";
     new_div.innerHTML = ` <b>${name}:</b> ${message}`;
+    new_div.style.backgroundColor = APPENDED%2 == 0 ? "#ffffff" : "#d3d3d3";
     // Was at scroll bottom?
     atBottom = chatContainer.scrollTop >= chatContainer.scrollHeight - chatContainer.clientHeight;
     console.log("atBottom = " + atBottom);
     // Append div
     chatContainer.appendChild(new_div);
-    // Update scroll bar if necessary
+    // Update appended count, scroll bar if necessary
     if(atBottom) chatContainer.scrollTop = chatContainer.scrollHeight;
+    APPENDED += 1;
 }
-function appendServerMessage(message) {
+function appendServerMessage(message, bg) {
     let new_div = document.createElement("div");
     new_div.className = "messageBox";
     new_div.innerHTML = message;
+    new_div.style.backgroundColor = MESSAGE_BG_COLORS[bg];
+    // Was at scroll bottom?
+    atBottom = chatContainer.scrollTop >= chatContainer.scrollHeight - chatContainer.clientHeight;
     chatContainer.appendChild(new_div);
+    // Update appended count, scroll bar if necessary
+    if(atBottom) chatContainer.scrollTop = chatContainer.scrollHeight;
+    APPENDED += 1;
 }
 
 // Canvas stuff
@@ -102,15 +127,23 @@ document.getElementById("clearButton").onclick = () => {
         ctx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
     }
 }
+colorPicker.addEventListener("input", (e) => {
+    socket.emit("changeColorSignal", e.target.value);
+    changeColor(e.target.value);
+});
+sizePicker.addEventListener("input", (e) => {
+    socket.emit("changeSizeSignal", e.target.value);
+    changeSize(e.target.value);
+});
 
 // Canvas helper methods
 function penDown(x, y) {
     DRAWING = true;
     // Set up
-    ctx.lineWidth = 5;
+    ctx.lineWidth = PEN_SIZE;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
-    ctx.strokeStyle = "#000000";
+    ctx.strokeStyle = PEN_COLOR;
     // Ready up
     ctx.moveTo(x, y);
     ctx.beginPath();
@@ -129,6 +162,12 @@ function penUp() {
         DRAWING = false;
         ctx.closePath();
     }
+}
+function changeColor(color) {
+    PEN_COLOR = color;
+}
+function changeSize(size) {
+    PEN_SIZE = size;
 }
 
 // On start-up

@@ -17,23 +17,24 @@ const COMMANDS = {
         new_name = _tokens.slice(1).join(" ");
         NAMES[_socket.id] = new_name;
         _socket.emit("nameChangeSignal", new_name);
-        _socket.emit("broadcastServerMessageSignal", `<i>You changed your name to ${Entities.encode(new_name)}!</i>`);
-        _socket.broadcast.emit("broadcastServerMessageSignal", `<i>${Entities.encode(old_name)} has \
-            changed their name to ${Entities.encode(old_name)}!</i>`);
+        _socket.emit("broadcastServerMessageSignal", {message: `<i>You changed your name to <b>${Entities.encode(new_name)}</b>!</i>`, bg: "green"});
+        _socket.broadcast.emit("broadcastServerMessageSignal", {message: `<i><b>${Entities.encode(old_name)}</b> has \
+            changed their name to <b>${Entities.encode(new_name)}</b>!</i>`, bg: "green"});
     },
     start: (_socket, _tokens) => {
-        _socket.emit("broadcastServerMessageSignal", `<i>[/start] This command is not available yet!</i>`);
+        _socket.emit("broadcastServerMessageSignal", {message: `<i>[/start] This command is not available yet!</i>`, bg: "red"});
     },
     word: (_socket, _tokens) => {
-        _socket.emit("broadcastServerMessageSignal", `<i>[/start] This command is not available yet!</i>`);
+        _socket.emit("broadcastServerMessageSignal", {message: `<i>[/word] This command is not available yet!</i>`, bg: "red"});
     }
 }
 
+// Socket.io listeners
 mainIO.on("connection", (socket) => {
     // Welcome
     socket.emit("serverLogSignal", "Hello new user!");
     socket.on("disconnect", () => {
-        socket.broadcast.emit("broadcastServerMessageSignal", `<i>${Entities.encode(NAMES[socket.id])} left.</i>`)
+        socket.broadcast.emit("broadcastServerMessageSignal", {message: `<i><b>${Entities.encode(NAMES[socket.id])}</b> left.</i>`, bg: "red"});
     });
 
     // Set listeners for events emitted by this socket (user)
@@ -42,7 +43,7 @@ mainIO.on("connection", (socket) => {
         NAMES[socket.id] = name;
         console.log(`New user: ${name} (socket ID = ${socket.id})`);
         socket.emit("serverLogSignal", `${name}! That's a nice name!`);
-        mainIO.sockets.emit("broadcastServerMessageSignal", `<i>${Entities.encode(name)} joined!</i>`)
+        mainIO.sockets.emit("broadcastServerMessageSignal", {message: `<i><b>${Entities.encode(name)}</b> joined!</i>`, bg: "green"})
     });
     socket.on("messageSentSignal", (message) => {
         console.log(`New message from ${NAMES[socket.id]} >> ${message}`);
@@ -58,10 +59,11 @@ mainIO.on("connection", (socket) => {
         }
         catch(err) {
             if(typeof err == "string") {
-                socket.emit("broadcastServerMessageSignal", `<i>${Entities.encode(err)}</i>`)
+                socket.emit("broadcastServerMessageSignal", {message: `<i>${Entities.encode(err)}</i>`, bg: "red"});
             }
             else {
-                socket.emit("broadcastServerMessageSignal", `<i>Sorry, "/${tokens.length > 0 ? tokens[0] : ""}" is not a valid command.</i>`);
+                socket.emit("broadcastServerMessageSignal", {message: `<i>Sorry, <b>/${tokens.length > 0 ? tokens[0] : ""}</b> is not a valid command.</i>`,
+                    bg: "red"});
             }
         }
     });
@@ -77,5 +79,11 @@ mainIO.on("connection", (socket) => {
     });
     socket.on("clearCanvasSignal", () => {
         socket.broadcast.emit("clearCanvasSignal");
+    });
+    socket.on("changeColorSignal", (color) => {
+        socket.broadcast.emit("changeColorSignal", color);
+    });
+    socket.on("changeSizeSignal", (size) => {
+        socket.broadcast.emit("changeSizeSignal", size);
     });
 });
