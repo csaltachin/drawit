@@ -63,6 +63,7 @@
     outline: none;
     height: 6px;
     border-radius: 3px;
+    margin-bottom: 7px;
     transition: opacity .2s;
 }
 .penSizeSlider:hover {
@@ -91,6 +92,11 @@
     background-color: white;
     width: 450px;
     height: 450px;
+    /*
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    */
     overflow-y: scroll;
 
     border-style: solid;
@@ -106,13 +112,16 @@
 }
 #chatInput {
     border: none;
-    width: 97%;
+    width: 444px;
     padding: 5px;
 }
 #clearButton {
+    background-color: darkgray;
+    font-size: 16;
+
     width: 100%;
     border: solid 2px rgb(58, 58, 58);
-    background-color: darkgray;
+    padding: 3px;
     text-align: center;
 }
 #clearButton:hover {

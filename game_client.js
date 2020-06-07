@@ -5,6 +5,7 @@
 // Setup, get elements
 const HOSTNAME = "localhost";
 const socket = io(`http://${HOSTNAME}:3000`); // Location for socket.io server
+var ROOM; // Game room
 
 var drawCanvas = document.getElementById("drawCanvas");
 var ctx = drawCanvas.getContext("2d");
@@ -18,11 +19,14 @@ const sizePicker = document.getElementById("penSizeInput");
 const chatContainer = document.getElementById("chatContainer");
 const chatForm = document.getElementById("chatForm");
 const chatInput = document.getElementById("chatInput");
+const emptyChatDiv = document.getElementById("emptyChatDiv");
+
 var NAME = prompt("What's your name?");
 var APPENDED = 0;
 const MESSAGE_BG_COLORS = {
     red: "#FF5252",
-    green: "#6FFF52"
+    green: "#6FFF52",
+    yellow: "#ffcd42"
 }
 
 // Socket.io listening - chat
@@ -39,6 +43,11 @@ socket.on("nameChangeSignal", (new_name) => {
     NAME = new_name;
 });
 
+// Socket.io listening - game
+socket.on("updateRoomSignal", (roomNumber) => {
+    ROOM = roomNumber;
+});
+
 // Socket.io listening - canvas
 socket.on("penDownSignal", (pos) => {
     CANVAS_LOCKED = true;
@@ -53,6 +62,12 @@ socket.on("penUpSignal", () => {
 });
 socket.on("clearCanvasSignal", () => {
     ctx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+});
+socket.on("lockCanvasSignal", () => {
+    CANVAS_LOCKED = true;
+});
+socket.on("unlockCanvasSignal", () => {
+    CANVAS_LOCKED = false;
 });
 socket.on("changeColorSignal", (color) => {
     changeColor(color);
@@ -81,7 +96,8 @@ function appendChatMessage(name, message, bg) {
     new_div.innerHTML = ` <b>${name}:</b> ${message}`;
     new_div.style.backgroundColor = APPENDED%2 == 0 ? "#ffffff" : "#d3d3d3";
     // Was at scroll bottom?
-    atBottom = chatContainer.scrollTop >= chatContainer.scrollHeight - chatContainer.clientHeight;
+    //atBottom = chatContainer.scrollTop >= chatContainer.scrollHeight - chatContainer.clientHeight;
+    atBottom = Math.ceil(chatContainer.scrollTop) == chatContainer.scrollHeight - chatContainer.clientHeight;
     console.log("atBottom = " + atBottom);
     // Append div
     chatContainer.appendChild(new_div);
@@ -95,7 +111,8 @@ function appendServerMessage(message, bg) {
     new_div.innerHTML = message;
     new_div.style.backgroundColor = MESSAGE_BG_COLORS[bg];
     // Was at scroll bottom?
-    atBottom = chatContainer.scrollTop >= chatContainer.scrollHeight - chatContainer.clientHeight;
+    atBottom = Math.ceil(chatContainer.scrollTop) == chatContainer.scrollHeight - chatContainer.clientHeight;
+    // Append div
     chatContainer.appendChild(new_div);
     // Update appended count, scroll bar if necessary
     if(atBottom) chatContainer.scrollTop = chatContainer.scrollHeight;
@@ -168,6 +185,11 @@ function changeColor(color) {
 }
 function changeSize(size) {
     PEN_SIZE = size;
+}
+
+// Debug utilities
+function serverLog(req_str) {
+    socket.emit("reqServerLogSignal", req_str);
 }
 
 // On start-up
