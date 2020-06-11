@@ -6,11 +6,13 @@
 const HOSTNAME = "localhost";
 const socket = io(`http://${HOSTNAME}:3000`); // Location for socket.io server
 var ROOM; // Game room
+var TIMER_COUNT = 0;
+var TIMER_INTERVAL;
 
 var drawCanvas = document.getElementById("drawCanvas");
 var ctx = drawCanvas.getContext("2d");
 var DRAWING = false;
-var CANVAS_LOCKED = false;
+var CANVAS_LOCKED = true;
 var PEN_COLOR = "#000000";
 var PEN_SIZE = 3;
 
@@ -19,15 +21,18 @@ const sizePicker = document.getElementById("penSizeInput");
 const chatContainer = document.getElementById("chatContainer");
 const chatForm = document.getElementById("chatForm");
 const chatInput = document.getElementById("chatInput");
-const emptyChatDiv = document.getElementById("emptyChatDiv");
+const roundDisplay = document.getElementById("roundDisplay");
+const artistDisplay = document.getElementById("artistDisplay");
+const timerDisplay = document.getElementById("timerDisplay");
 
 var NAME = prompt("What's your name?");
 var APPENDED = 0;
-const MESSAGE_BG_COLORS = {
-    red: "#FF5252",
-    green: "#6FFF52",
-    yellow: "#ffcd42"
-}
+const MESSAGE_BG_COLORS = new Map([
+    ["red", {bg: "#FF5252", border: "#b51d1d"}],
+    ["green", {bg: "#6FFF52", border: "#29a624"}],
+    ["yellow", {bg: "#ffcd42", border: "#cc9b14"}],
+    ["blue", {bg: "#66a8ff", border: "#1b62bf"}]
+]);
 
 // Socket.io listening - chat
 socket.on("serverLogSignal", (message) => {
@@ -37,7 +42,7 @@ socket.on("broadcastChatMessageSignal", (data) => {
     appendChatMessage(data.name, data.message);
 });
 socket.on("broadcastServerMessageSignal", (data) => {
-    appendServerMessage(data.message, data.bg);
+    appendServerMessage(data.message, data.color);
 });
 socket.on("nameChangeSignal", (new_name) => {
     NAME = new_name;
@@ -50,7 +55,7 @@ socket.on("updateRoomSignal", (roomNumber) => {
 
 // Socket.io listening - canvas
 socket.on("penDownSignal", (pos) => {
-    CANVAS_LOCKED = true;
+    //CANVAS_LOCKED = true;
     penDown(pos.x, pos.y);
 });
 socket.on("penLineSignal", (pos) => {
@@ -58,15 +63,17 @@ socket.on("penLineSignal", (pos) => {
 });
 socket.on("penUpSignal", () => {
     penUp();
-    CANVAS_LOCKED = false;
+    //CANVAS_LOCKED = false;
 });
 socket.on("clearCanvasSignal", () => {
     ctx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
 });
 socket.on("lockCanvasSignal", () => {
+    console.log("Locking canvas...");
     CANVAS_LOCKED = true;
 });
 socket.on("unlockCanvasSignal", () => {
+    console.log("Unlocking canvas...");
     CANVAS_LOCKED = false;
 });
 socket.on("changeColorSignal", (color) => {
@@ -76,6 +83,10 @@ socket.on("changeColorSignal", (color) => {
 socket.on("changeSizeSignal", (size) => {
     changeSize(size);
     sizePicker.value = size;
+});
+socket.on("requestPenUpdateSignal", () => {
+    socket.emit("changeColorSignal", PEN_COLOR);
+    socket.emit("changeSizeSignal", PEN_SIZE);
 });
 
 // Chat form listening
@@ -89,7 +100,7 @@ chatForm.addEventListener("submit", (e) => {
 });
 
 // Chat stuff
-function appendChatMessage(name, message, bg) {
+function appendChatMessage(name, message) {
     // Create/append new messageBox div for this message
     let new_div = document.createElement("div");
     new_div.className = "messageBox";
@@ -105,11 +116,13 @@ function appendChatMessage(name, message, bg) {
     if(atBottom) chatContainer.scrollTop = chatContainer.scrollHeight;
     APPENDED += 1;
 }
-function appendServerMessage(message, bg) {
+function appendServerMessage(message, color) {
     let new_div = document.createElement("div");
     new_div.className = "messageBox";
     new_div.innerHTML = message;
-    new_div.style.backgroundColor = MESSAGE_BG_COLORS[bg];
+    new_div.style.backgroundColor = MESSAGE_BG_COLORS.get(color).bg;
+    //new_div.style.borderTop = `solid ${MESSAGE_BG_COLORS.get(color).border} 2px`;
+    //new_div.style.borderBottom = `solid ${MESSAGE_BG_COLORS.get(color).border} 2px`;
     // Was at scroll bottom?
     atBottom = Math.ceil(chatContainer.scrollTop) == chatContainer.scrollHeight - chatContainer.clientHeight;
     // Append div
@@ -117,6 +130,19 @@ function appendServerMessage(message, bg) {
     // Update appended count, scroll bar if necessary
     if(atBottom) chatContainer.scrollTop = chatContainer.scrollHeight;
     APPENDED += 1;
+}
+
+// Captions stuff
+function startTimer(time) {
+    if(typeof time != "number" || parseInt(time) <= 0) throw Error("startTimer takes a single positive integer argument");
+    TIMER_COUNT = parseInt(time);
+    timerDisplay.textContent = TIMER_COUNT;
+    TIMER_INTERVAL = setInterval(timerTick, 1000);
+}
+function timerTick() {
+    TIMER_COUNT -= 1;
+    timerDisplay.textContent = TIMER_COUNT;
+    if(TIMER_COUNT == 0) clearInterval(TIMER_INTERVAL);
 }
 
 // Canvas stuff

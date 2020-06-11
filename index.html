@@ -12,31 +12,46 @@
 </head>
 
 <body style="background-color: lightblue;">
+    <h1 id="headerBox">
+        <p>drawit</p>
+        <p>by csaltachin</p>
+    </h1>
     <div id="gameBox">
         <div id="canvasBox">
             <canvas id="drawCanvas" width="720" height="480"></canvas>
             <div id="penBox">
                 <div id="penColorBox" class="penInputClass">
                     <input type="color" id="penColorInput" value="#000000">
-                    <label for="penColorInput">Pen color</label>
+                    <label for="penColorInput">pen color</label>
                 </div>
-                <div id="defaultColorsBox">
-
+                <div id="clearButtonBox" class="penInputClass">
+                    <button id="clearButton">clear canvas</button>
                 </div>
                 <div id="penSizeBox" class="penInputClass">
                     <input type="range" id="penSizeInput" min="1" max="25" step="1" value="3" class="penSizeSlider">
-                    <label for="penSizeInput">Pen size</label>
+                    <label for="penSizeInput">pen size</label>
                 </div>
             </div>
         </div>
         <div id="chatBox">
-            <div id="chatContainer">
-                <!--<div id="emptyChatDiv" style="height: 100%"></div>-->
-            </div>
+            <div id="chatContainer"></div>
             <form id="chatForm">
                 <input type="text" id="chatInput" autocomplete="off">
             </form>
-            <button id="clearButton">Clear canvas</button>
+            <div id="gameCaptionDiv">
+                <div class="gameCaptionTextbox">
+                    <p class="smallCaption">round </p>
+                    <p class="bigCaption" id="roundDisplay">1</p>
+                </div>
+                <div class="gameCaptionTextbox">
+                    <p class="smallCaption">artist </p>
+                    <p class="bigCaption" id="artistDisplay">Sample User</p>
+                </div>
+                <div class="gameCaptionTextbox">
+                    <p class="smallCaption">time </p>
+                    <p class="bigCaption" id="timerDisplay">90</p>
+                </div>
+            </div>
         </div>
     </div>
 </body>
