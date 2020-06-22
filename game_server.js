@@ -13,8 +13,8 @@ const GAMESTATES = {
     AWAITING_START: 1,
     CHOOSING_WORD: 2,
     GUESSING: 3,
-    TIME_UP_OR_GUESSED: 4,
-    GAME_FINISHED: 5,
+    INTERMISSION: 4,
+    GAME_OVER: 5,
 }
 
 class GameRoom {
@@ -29,6 +29,7 @@ class GameRoom {
         this.scores[_socket.id] = 0;
         this.currentWord = null;
         this.currentRound = 0;
+        this.currentGuesses = 0;
         this.rounds = 0;
         this.roundTime = 0; // In seconds
         this.chooseTime = 0; // In seconds
@@ -39,7 +40,13 @@ class GameRoom {
     addPlayer(_socket) {
         this.sockets.push(_socket);
         this.scores[_socket.id] = 0;
-        _socket.emit("broadcastServerMessageSignal", {message: `<i>You have joined room <b>#${this.roomNumber}</b>!</i>`, color: "blue"});
+        _socket.emit("setLabelsSignal", {
+            artistLabel: "waiting for players..."
+        });
+        _socket.emit("broadcastServerMessageSignal", {
+            message: `<i>You have joined room <b>#${this.roomNumber}</b>!</i>`,
+            color: "blue"
+        });
     }
     removePlayer(_socket) {
         delete this.scores[_socket.id];
@@ -49,7 +56,10 @@ class GameRoom {
                 break;
             }
         }
-        _socket.emit("broadcastServerMessageSignal", {message: `<i>You have left room <b>#${this.roomNumber}</b>.</i>`, color: "blue"});
+        _socket.emit("broadcastServerMessageSignal", {
+            message: `<i>You have left room <b>#${this.roomNumber}</b>.</i>`,
+            color: "blue"
+        });
     }
     startGame(rounds, roundTime, chooseTime) {
         // Default values
@@ -68,25 +78,42 @@ class GameRoom {
     startRound() {
         // Set state, artist
         this.state = GAMESTATES.CHOOSING_WORD;
+        this.currentGuesses = 0;
         let artistSocket = this.sockets[this.artistIndex];
         // Clear/lock all canvases, send server messages, start all countdowns
         for(let _socket of this.sockets) {
+            // Set labels
+            _socket.emit("setLabelsSignal", {
+                roundLabel: "round ",
+                roundDisplay: this.currentRound,
+                artistLabel: "artist ",
+                artistDisplay: Entities.encode(NAMES[artistSocket.id]),
+                timerLabel: "time ",
+                timerDisplay: this.chooseTime
+            });
             _socket.emit("clearCanvasSignal");
             _socket.emit("lockCanvasSignal");
-            _socket.emit("broadcastServerMessageSignal", {message: `<i><b>Round ${this.currentRound}</b> has
-                started! It's <b>${NAMES[artistSocket.id]}</b>'s turn to draw.</i>`, color: "blue"});
+            _socket.emit("broadcastServerMessageSignal", {
+                message: `<i><b>Round ${this.currentRound}</b> has started! It's <b>${Entities.encode(NAMES[artistSocket.id])}</b>'s turn to draw.</i>`,
+                color: "blue"
+            });
             if(_socket.id == artistSocket.id) {
-                _socket.emit("broadcastServerMessageSignal", {message: `<i>Choose a word by typing <b>/word
-                    [chosen word]</b>. You have ${this.chooseTime} seconds!</i>`, color: "yellow"});
+                _socket.emit("broadcastServerMessageSignal", {
+                    message: `<i>Choose a word by typing <b>/word [chosen word]</b>. You have ${this.chooseTime} seconds!</i>`,
+                    color: "yellow"
+                });
             }
             else {
-                _socket.emit("broadcastServerMessageSignal", {message: `<i>${NAMES[artistSocket.id]} is choosing a word...</i>`, color: "yellow"});
+                _socket.emit("broadcastServerMessageSignal", {
+                    message: `<i>${Entities.encode(NAMES[artistSocket.id])} is choosing a word...</i>`,
+                    color: "yellow"
+                });
             }
-            _socket.emit("startCountdownSignal", {desc: "choosing...", seconds: this.chooseTime});
+            _socket.emit("startTimerSignal", this.chooseTime);
         }
         // Set choosing-word timeout
         this.currentTimeout = setTimeout(() => {
-            this.timeupChoose(); // Pass this GameRoom instance as argument to be able to access the context
+            this.timeupChoose();
         }, this.chooseTime * 1000);
     }
     chooseWord(_socket, word) {
@@ -106,39 +133,91 @@ class GameRoom {
         this.currentWord = word;
         this.state = GAMESTATES.GUESSING;
         for(let s of this.sockets) {
+            s.emit("setWordSignal", word);
             if(s.id == _socket.id) {
-                s.emit("broadcastServerMessageSignal", {message: `<i>You have chosen the word <b>${word}</b>. You 
-                    have <b>${this.roundTime}</b> seconds to draw!</i>`, color: "blue"});
+                s.emit("broadcastServerMessageSignal", {
+                    message: `<i>You have chosen the word <b>${word}</b>. You have <b>${this.roundTime}</b> seconds to draw!</i>`,
+                    color: "blue"
+                });
                 s.emit("unlockCanvasSignal");
             }
             else {
-                s.emit("broadcastServerMessageSignal", {message: `<i>Word chosen. You have <b>${this.roundTime}</b> 
-                    seconds to guess the word!</i>`, color: "blue"});
+                s.emit("broadcastServerMessageSignal", {
+                    message: `<i>Word chosen. You have <b>${this.roundTime}</b> seconds to guess the word!</i>`,
+                    color: "blue"
+                });
+                s.emit("listenWordsSignal");
             }
+            s.emit("startTimerSignal", this.roundTime);
         }
         // Set new timeout for round time
         this.currentTimeout = setTimeout(() => {
-            this.timeupRound();
+            this.finishRound(true);
         }, this.roundTime*1000);
     }
     timeupChoose() {
-        let artistID = NAMES[this.sockets[this.artistIndex].id];
+        let artistName = NAMES[this.sockets[this.artistIndex].id];
         for(let _socket of this.sockets) {
-            _socket.emit("broadcastServerMessageSignal", {message: `<i><b>${artistID}</b> ran out of time choosing!</i>`, color: "yellow"});
+            _socket.emit("broadcastServerMessageSignal", {
+                message: `<i><b>${Entities.encode(artistName)}</b> ran out of time choosing!</i>`,
+                color: "yellow"
+            });
         }
     }
-    guess(_socket, word) {
-        // Check guess
-        // Update points, game state
-        // Start 10 second intermission
-    }
-    timeupRound() {
-        for(let _socket of this.sockets) {
-            _socket.emit("broadcastServerMessageSignal", {message: `<i>Time's up!</i>`, color: "yellow"});
+    guessed(_socket) {
+        if(this.state == GAMESTATES.GUESSING) {
+            // Add guess to guess count
+            this.currentGuesses += 1;
+            // Award guesser
+            this.scores[_socket] += 1;
+            // Broadcast
+            for(let s of this.sockets) {
+                s.emit("broadcastServerMessageSignal", {
+                    message: `<i><b>${Entities.encode(NAMES[_socket.id])} guessed the word! (+1)`,
+                    color: "green"
+                });
+            }
+            // Check if max guess count reached
+            if(this.currentGuesses == this.sockets.length - 1) {
+                clearTimeout(this.currentTimeout); // To clear the round timer timeout
+                this.finishRound(false);
+            }
         }
+    }
+    finishRound(timeUp) {
+        // Update state, send unlisten signals, reveal word, broadcast end-of-round message
+        this.state = GAMESTATES.INTERMISSION;
+        for(let s of this.sockets) {
+            s.emit("lockCanvasSignal");
+            s.emit("unlistenWordsSignal");
+            s.emit("stopTimerSignal");
+            s.emit("broadcastServerMessageSignal", {
+                message: `<i>${timeUp ? "Time's up" : "Round over"}: the word was <b>${this.currentWord}</b>!</i>`,
+                color: "blue"
+            });
+        }
+        // Intermission/game over timeout
+        this.currentTimeout = setTimeout(() => {
+            // If there are rounds left, prep
+            if(this.currentRound < this.rounds) {
+                this.currentRound += 1;
+                this.currentWord = null;
+                this.artistIndex = (this.artistIndex + 1)%this.sockets.length;
+                this.startRound();
+            }
+            // Else game over
+            else {
+                this.state = GAMESTATES.GAME_OVER;
+                // More pre-gameOver() stuff?
+                this.gameOver();
+            }
+        }, 10000); // 10 seconds
     }
     scoreFromSocket(_socket) {
         return this.scores[_socket.id];
+    }
+    gameOver() {
+        // TODO: Game over stuff
     }
 }
 
@@ -155,9 +234,14 @@ const COMMANDS = {
         let new_name = _tokens.slice(1).join(" ");
         NAMES[_socket.id] = new_name;
         _socket.emit("nameChangeSignal", new_name);
-        _socket.emit("broadcastServerMessageSignal", {message: `<i>You changed your name to <b>${Entities.encode(new_name)}</b>!</i>`, color: "green"});
-        _socket.broadcast.emit("broadcastServerMessageSignal", {message: `<i><b>${Entities.encode(old_name)}</b> has
-            changed their name to <b>${Entities.encode(new_name)}</b>!</i>`, color: "green"});
+        _socket.emit("broadcastServerMessageSignal", {
+            message: `<i>You changed your name to <b>${Entities.encode(new_name)}</b>!</i>`,
+            color: "green"
+        });
+        _socket.broadcast.emit("broadcastServerMessageSignal", {
+            message: `<i><b>${Entities.encode(old_name)}</b> has changed their name to <b>${Entities.encode(new_name)}</b>!</i>`,
+            color: "green"
+        });
     },
     open: (_socket, _tokens) => {
         // Check if can open room
@@ -172,8 +256,15 @@ const COMMANDS = {
         let newRoom = new GameRoom(_socket, newRoomNumber);
         ROOMS[_socket.id] = newRoom;
         OPEN_ROOMS.set(newRoomNumber, newRoom);
-        _socket.emit("broadcastServerMessageSignal", {message: `<i>You have opened room <b>#${newRoomNumber}</b>!</i>`, color: "blue"});
+        _socket.emit("broadcastServerMessageSignal", {
+            message: `<i>You have opened room <b>#${newRoomNumber}</b>!</i>`,
+            color: "blue"
+        });
         _socket.emit("updateRoomSignal", newRoomNumber);
+        // Set captions
+        _socket.emit("setLabelsSignal", {
+            artistLabel: "waiting for players..."
+        });
     },
     join: (_socket, _tokens) => {
         // Check if can join room
@@ -197,7 +288,7 @@ const COMMANDS = {
             thisRoom.startGame(_tokens[1], _tokens[2], _tokens[3]);
         }
         else {
-            throw `You're not the admin of this room! Ask ${NAMES[thisRoom.adminSocket.id]} to start the game.`;
+            throw `You're not the admin of this room! Ask ${Entities.encode(NAMES[thisRoom.adminSocket.id])} to start the game.`;
         }
     },
     word: (_socket, _tokens) => {
@@ -218,7 +309,10 @@ mainIO.on("connection", (socket) => {
     // Welcome
     socket.emit("serverLogSignal", "Hello new user!");
     socket.on("disconnect", () => {
-        socket.broadcast.emit("broadcastServerMessageSignal", {message: `<i><b>${Entities.encode(NAMES[socket.id])}</b> left.</i>`, color: "red"});
+        socket.broadcast.emit("broadcastServerMessageSignal", {
+            message: `<i><b>${Entities.encode(NAMES[socket.id])}</b> left.</i>`,
+            color: "red"
+        });
     });
 
     // Set listeners for events emitted by this socket (user)
@@ -227,14 +321,17 @@ mainIO.on("connection", (socket) => {
         NAMES[socket.id] = name;
         console.log(`New user: ${name} (socket ID = ${socket.id})`);
         socket.emit("serverLogSignal", `${name}! That's a nice name!`);
-        mainIO.sockets.emit("broadcastServerMessageSignal", {message: `<i><b>${Entities.encode(name)}</b> joined!</i>`, color: "green"})
+        mainIO.sockets.emit("broadcastServerMessageSignal", {
+            message: `<i><b>${Entities.encode(name)}</b> joined!</i>`,
+            color: "green"
+        });
     });
     socket.on("messageSentSignal", (message) => {
         console.log(`New message from ${NAMES[socket.id]} >> ${message}`);
         // Encode message (will be passed in to html field)
         encoded_message = Entities.encode(message);
         socket.emit("broadcastChatMessageSignal", {name: "(you)", message: encoded_message})
-        socket.broadcast.emit("broadcastChatMessageSignal", {name: NAMES[socket.id], message: encoded_message});
+        socket.broadcast.emit("broadcastChatMessageSignal", {name: Entities.encode(NAMES[socket.id]), message: encoded_message});
     });
     socket.on("commandSentSignal", (command_string) => {
         let tokens = command_string.substring(1).split(" ");
@@ -243,15 +340,34 @@ mainIO.on("connection", (socket) => {
         }
         catch(err) {
             if(typeof err == "string") {
-                socket.emit("broadcastServerMessageSignal", {message: `<i>${Entities.encode(err)}</i>`, color: "red"});
+                socket.emit("broadcastServerMessageSignal", {
+                    message: `<i>${Entities.encode(err)}</i>`,
+                    color: "red"
+                });
             }
             else {
                 console.log("[UnhandledError] " + err);
-                socket.emit("broadcastServerMessageSignal", {message: `<i>Sorry, <b>/${tokens.length > 0 ? tokens[0] : ""}</b> is not a 
-                    valid command.</i>`, color: "red"});
+                socket.emit("broadcastServerMessageSignal", {
+                    message: `<i>Sorry, <b>/${tokens.length > 0 ? tokens[0] : ""}</b> is not a valid command.</i>`, 
+                    color: "red"
+                });
             }
         }
     });
+
+    // Game signals
+    socket.on("guessedWordSignal", () => {
+        try {
+            ROOMS[socket.id].guessed(socket);
+        }
+        catch(err) {
+            socket.emit("broadcastServerMessageSignal", {
+                message: "<i>Sorry, an unexpected error happened - tried to process guess while not in a game room.</i>",
+                color: "red"
+            });
+        }
+    });
+
     // Canvas signals
     socket.on("penDownSignal", (pos) => {
         socket.broadcast.emit("penDownSignal", pos);
@@ -271,6 +387,7 @@ mainIO.on("connection", (socket) => {
     socket.on("changeSizeSignal", (size) => {
         socket.broadcast.emit("changeSizeSignal", size);
     });
+
     // Debug signals
     socket.on("reqServerLogSignal", (req_str) => {
         socket.emit("serverLogSignal", `${eval(req_str)}`);

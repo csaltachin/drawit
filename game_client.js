@@ -8,22 +8,34 @@ const socket = io(`http://${HOSTNAME}:3000`); // Location for socket.io server
 var ROOM; // Game room
 var TIMER_COUNT = 0;
 var TIMER_INTERVAL;
+var TIMER_ON = false;
+var CURRENT_WORD = {
+    listening: false,
+    guessed: false,
+    word: null,
+}
 
 var drawCanvas = document.getElementById("drawCanvas");
 var ctx = drawCanvas.getContext("2d");
 var DRAWING = false;
 var CANVAS_LOCKED = true;
 var PEN_COLOR = "#000000";
-var PEN_SIZE = 3;
+var PEN_SIZE = 6;
 
+const CAPTIONS = {
+    roundLabel: document.getElementById("roundLabel"),
+    roundDisplay: document.getElementById("roundDisplay"),
+    artistLabel: document.getElementById("artistLabel"),
+    artistDisplay: document.getElementById("artistDisplay"),
+    timerLabel: document.getElementById("timerLabel"),
+    timerDisplay: document.getElementById("timerDisplay"),
+}
 const colorPicker = document.getElementById("penColorInput");
 const sizePicker = document.getElementById("penSizeInput");
 const chatContainer = document.getElementById("chatContainer");
 const chatForm = document.getElementById("chatForm");
 const chatInput = document.getElementById("chatInput");
-const roundDisplay = document.getElementById("roundDisplay");
-const artistDisplay = document.getElementById("artistDisplay");
-const timerDisplay = document.getElementById("timerDisplay");
+const captionDiv = document.getElementById("gameCaptionDiv")
 
 var NAME = prompt("What's your name?");
 var APPENDED = 0;
@@ -51,6 +63,36 @@ socket.on("nameChangeSignal", (new_name) => {
 // Socket.io listening - game
 socket.on("updateRoomSignal", (roomNumber) => {
     ROOM = roomNumber;
+});
+socket.on("setWordSignal", (word) => {
+    CURRENT_WORD.word = word;
+    CURRENT_WORD.guessed = false;
+});
+socket.on("listenWordsSignal", () => {
+    CURRENT_WORD.listening = true;
+});
+socket.on("unlistenWordsSignal", () => {
+    CURRENT_WORD.listening = false;
+});
+
+// Socket.io listening - captions/timer
+socket.on("setLabelsSignal", (data) => {
+    for(let propname in CAPTIONS) {
+        if(data.hasOwnProperty(propname)) CAPTIONS[propname].textContent = data[propname];
+        else CAPTIONS[propname].textContent = "";
+    }
+});
+socket.on("changeLabelsSignal", (data) => {
+    for(let propname in data) {
+        CAPTIONS[propname].textContent = data[propname];
+    }
+});
+socket.on("startTimerSignal", (seconds) => {
+    if(TIMER_ON) clearInterval(TIMER_INTERVAL);
+    startTimer(seconds);
+});
+socket.on("stopTimerSignal", () => {
+    if(TIMER_ON) clearInterval(TIMER_INTERVAL);
 });
 
 // Socket.io listening - canvas
@@ -94,7 +136,16 @@ chatForm.addEventListener("submit", (e) => {
     e.preventDefault();
     let chat_message = chatInput.value;
     if(chat_message == "") return;
-    if(chat_message.charAt(0) == "/") socket.emit("commandSentSignal", chat_message);
+    if(CURRENT_WORD.listening && chat_message.toLowerCase() == CURRENT_WORD.word) {
+        if(CURRENT_WORD.guessed) {
+            appendServerMessage(`<i>Don't spoil the word!</i>`, "yellow");
+        }
+        else {
+            socket.emit("guessedWordSignal");
+            CURRENT_WORD.guessed = true;
+        }
+    }
+    else if(chat_message.charAt(0) == "/") socket.emit("commandSentSignal", chat_message);
     else socket.emit("messageSentSignal", chat_message);
     chatInput.value = ""; // Empty input box after sending chat message
 });
@@ -132,17 +183,22 @@ function appendServerMessage(message, color) {
     APPENDED += 1;
 }
 
-// Captions stuff
+// Captions/timer stuff
 function startTimer(time) {
     if(typeof time != "number" || parseInt(time) <= 0) throw Error("startTimer takes a single positive integer argument");
     TIMER_COUNT = parseInt(time);
-    timerDisplay.textContent = TIMER_COUNT;
+    CAPTIONS.timerDisplay.textContent = TIMER_COUNT;
+    TIMER_ON = true;
     TIMER_INTERVAL = setInterval(timerTick, 1000);
 }
 function timerTick() {
     TIMER_COUNT -= 1;
-    timerDisplay.textContent = TIMER_COUNT;
-    if(TIMER_COUNT == 0) clearInterval(TIMER_INTERVAL);
+    CAPTIONS.timerDisplay.textContent = TIMER_COUNT;
+    // On timer over
+    if(TIMER_COUNT == 0) {
+        clearInterval(TIMER_INTERVAL);
+        TIMER_ON = false;
+    }
 }
 
 // Canvas stuff
@@ -220,3 +276,5 @@ function serverLog(req_str) {
 
 // On start-up
 socket.emit("newUserSignal", NAME);
+artistLabel.textContent = "welcome, ";
+artistDisplay.textContent = NAME;
