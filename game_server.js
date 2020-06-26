@@ -63,9 +63,9 @@ class GameRoom {
     }
     startGame(rounds, roundTime, chooseTime) {
         // Default values
-        this.rounds = typeof rounds == "undefined" ? 6 : rounds;
-        this.roundTime = typeof roundTime == "undefined" ? 90 : roundTime;
-        this.chooseTime = typeof chooseTime == "undefined" ? 30 : chooseTime;
+        this.rounds = typeof rounds == "undefined" ? 6 : parseInt(rounds);
+        this.roundTime = typeof roundTime == "undefined" ? 90 : parseInt(roundTime);
+        this.chooseTime = typeof chooseTime == "undefined" ? 30 : parseInt(chooseTime);
         // Check more than one player
         if(this.sockets.length < 2) throw "You need at least 2 players to start a game!";
         // Synchronize pen color/size with respect to admin
@@ -164,16 +164,16 @@ class GameRoom {
             });
         }
     }
-    guessed(_socket) {
+    guessed(_socket, points) {
         if(this.state == GAMESTATES.GUESSING) {
             // Add guess to guess count
             this.currentGuesses += 1;
             // Award guesser
-            this.scores[_socket] += 1;
+            this.scores[_socket.id] += points;
             // Broadcast
             for(let s of this.sockets) {
                 s.emit("broadcastServerMessageSignal", {
-                    message: `<i><b>${Entities.encode(NAMES[_socket.id])} guessed the word! (+1)`,
+                    message: `<i><b>${Entities.encode(NAMES[_socket.id])}</b> guessed the word! <b>(+${points})</b></i>`,
                     color: "green"
                 });
             }
@@ -211,13 +211,56 @@ class GameRoom {
                 // More pre-gameOver() stuff?
                 this.gameOver();
             }
-        }, 10000); // 10 seconds
+        }, 8000); // 8 seconds
     }
     scoreFromSocket(_socket) {
         return this.scores[_socket.id];
     }
+    sortedSocketsByScore() {
+        return this.sockets.slice().sort( (sA, sB) => {
+            return this.scoreFromSocket(sB) - this.scoreFromSocket(sA);
+        });
+    }
+    placeString(place) {
+        switch(place) {
+            case 1:
+                return 1 + "st";
+            case 2:
+                return 2 + "nd";
+            case 3:
+                return 3 + "rd";
+            default:
+                return place + "th";
+        }
+    }
     gameOver() {
-        // TODO: Game over stuff
+        // Final scores for up to top 5 players
+        let winners = this.sortedSocketsByScore();
+        let legend = "Game over! The top players were:";
+        for(let i = 0; i < 5 && i < winners.length; i++) {
+            legend += `<br>${i+1}. <b>${Entities.encode(NAMES[winners[i].id])}</b> (${this.scoreFromSocket(winners[i])} points)`;
+        }
+        legend = `<p style = "text-align: center; margin: 0px;"><i>` + legend + "</i></p>";
+        // Map socket IDs to scoreboard positions
+        let score_map = new Map();
+        for(let j = 0; j < winners.length; j++) {
+            score_map.set(winners[j].id, j+1);
+        }
+        // Broadcast
+        for(let _socket of this.sockets) {
+            _socket.emit("broadcastServerMessageSignal", {
+                message: legend,
+                color: "green"
+            });
+            _socket.emit("setLabelsSignal", {
+                roundLabel: "points ",
+                roundDisplay: this.scoreFromSocket(_socket),
+                artistLabel: "you placed ",
+                artistDisplay: this.placeString(score_map.get(_socket.id)),
+                timerLabel: "winner ",
+                timerDisplay: Entities.encode(NAMES[winners[0].id])
+            });
+        }
     }
 }
 
@@ -246,12 +289,12 @@ const COMMANDS = {
     open: (_socket, _tokens) => {
         // Check if can open room
         if(_tokens.length < 2) throw "You must specify a room number!";
-        if(ROOMS.hasOwnProperty(_socket.id)) throw `You are already in room #${ROOMS[_socket.id].roomNumber}! You must leave
+        if(ROOMS.hasOwnProperty(_socket.id)) throw `You are already in room <b>#${ROOMS[_socket.id].roomNumber}!</b> You must leave
             this room first before opening a new one.`;
         // Room number
         let newRoomNumber = parseInt(_tokens[1]);
         if(isNaN(newRoomNumber)) throw "The room number must be a valid positive integer!";
-        if(OPEN_ROOMS.has(newRoomNumber)) throw `Room #${newRoomNumber} is already open! Use '/join ${newRoomNumber}' to join it.`
+        if(OPEN_ROOMS.has(newRoomNumber)) throw `Room <b>#${newRoomNumber}</b> is already open! Use <b>/join ${newRoomNumber}</b> to join it.`
         // Open room
         let newRoom = new GameRoom(_socket, newRoomNumber);
         ROOMS[_socket.id] = newRoom;
@@ -269,13 +312,13 @@ const COMMANDS = {
     join: (_socket, _tokens) => {
         // Check if can join room
         if(_tokens.length < 2) throw "You must specify a room number!";
-        if(ROOMS.hasOwnProperty(_socket.id)) throw `You are already in room #${ROOMS[_socket.id].roomNumber}! You must leave
+        if(ROOMS.hasOwnProperty(_socket.id)) throw `You are already in room <b>#${ROOMS[_socket.id].roomNumber}!</b> You must leave
             this room first before joining a new one.`;
         // Room number
         let joinRoomNumber = parseInt(_tokens[1]);
         if(isNaN(joinRoomNumber)) throw "The room number must be a valid positive integer!";
-        if(!OPEN_ROOMS.has(joinRoomNumber)) throw `Room #${joinRoomNumber} hasn't been opened
-            yet! You can open it by doing '/open ${joinRoomNumber}'.`
+        if(!OPEN_ROOMS.has(joinRoomNumber)) throw `Room <b>#${joinRoomNumber}</b> hasn't been opened
+            yet! You can open it by doing <b>/open ${joinRoomNumber}</b>.`
         // Join room
         ROOMS[_socket.id] = OPEN_ROOMS.get(joinRoomNumber);
         ROOMS[_socket.id].addPlayer(_socket);
@@ -288,7 +331,7 @@ const COMMANDS = {
             thisRoom.startGame(_tokens[1], _tokens[2], _tokens[3]);
         }
         else {
-            throw `You're not the admin of this room! Ask ${Entities.encode(NAMES[thisRoom.adminSocket.id])} to start the game.`;
+            throw `You're not the admin of this room! Ask <b>${Entities.encode(NAMES[thisRoom.adminSocket.id])}</b> to start the game.`;
         }
     },
     word: (_socket, _tokens) => {
@@ -341,7 +384,7 @@ mainIO.on("connection", (socket) => {
         catch(err) {
             if(typeof err == "string") {
                 socket.emit("broadcastServerMessageSignal", {
-                    message: `<i>${Entities.encode(err)}</i>`,
+                    message: `<i>${err}</i>`,
                     color: "red"
                 });
             }
@@ -356,9 +399,9 @@ mainIO.on("connection", (socket) => {
     });
 
     // Game signals
-    socket.on("guessedWordSignal", () => {
+    socket.on("guessedWordSignal", (points) => {
         try {
-            ROOMS[socket.id].guessed(socket);
+            ROOMS[socket.id].guessed(socket, points);
         }
         catch(err) {
             socket.emit("broadcastServerMessageSignal", {

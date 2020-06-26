@@ -5,7 +5,7 @@
 // Setup, get elements
 const HOSTNAME = "localhost";
 const socket = io(`http://${HOSTNAME}:3000`); // Location for socket.io server
-var ROOM; // Game room
+var ROOM = null; // Game room
 var TIMER_COUNT = 0;
 var TIMER_INTERVAL;
 var TIMER_ON = false;
@@ -58,6 +58,9 @@ socket.on("broadcastServerMessageSignal", (data) => {
 });
 socket.on("nameChangeSignal", (new_name) => {
     NAME = new_name;
+    if(ROOM == null) {
+        artistDisplay.textContent = new_name;
+    }
 });
 
 // Socket.io listening - game
@@ -141,7 +144,7 @@ chatForm.addEventListener("submit", (e) => {
             appendServerMessage(`<i>Don't spoil the word!</i>`, "yellow");
         }
         else {
-            socket.emit("guessedWordSignal");
+            socket.emit("guessedWordSignal", TIMER_COUNT);
             CURRENT_WORD.guessed = true;
         }
     }
