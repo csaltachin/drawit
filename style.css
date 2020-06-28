@@ -14,7 +14,7 @@ body {
     background-color: midnightblue;
     color: rgb(255, 255, 255);
 
-    height: 600px;
+    height: auto;
     margin: 0px;
     padding: 10px;
     display: flex;
