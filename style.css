@@ -14,11 +14,13 @@ body {
     background-color: midnightblue;
     color: rgb(255, 255, 255);
 
+    height: 600px;
     margin: 0px;
     padding: 10px;
     display: flex;
     flex-direction: row;
     justify-content: space-between;
+    align-items: center;
 }
 #headerBox p {
     font-size: 34px;
