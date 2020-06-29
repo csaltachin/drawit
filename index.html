@@ -12,44 +12,54 @@
 </head>
 
 <body style="background-color: lightblue;">
-    <h1 id="headerBox">
-        <p>drawit</p>
-        <p>by csaltachin</p>
-    </h1>
-    <div id="gameBox">
-        <div id="canvasBox">
-            <canvas id="drawCanvas" width="720" height="480"></canvas>
-            <div id="penBox">
-                <div id="penColorBox" class="penInputClass">
-                    <input type="color" id="penColorInput" value="#000000">
-                    <label for="penColorInput">pen color</label>
-                </div>
-                <div id="clearButtonBox" class="penInputClass">
-                    <button id="clearButton">clear canvas</button>
-                </div>
-                <div id="penSizeBox" class="penInputClass">
-                    <input type="range" id="penSizeInput" min="1" max="25" step="1" value="6" class="penSizeSlider">
-                    <label for="penSizeInput">pen size</label>
+    <div id="contentDiv">
+        <h1 id="headerBox">
+            <p>drawit</p>
+            <div id="headerMidBox">
+                <div id="loginBox">
+                    <form id="nameForm">
+                        <input type="text" id="nameInput" placeholder="Enter your nickname..." autocomplete="off">
+                        <input type="submit" id="nameSubmit" value="Start!">
+                    </form>
                 </div>
             </div>
-        </div>
-        <div id="chatBox">
-            <div id="chatContainer"></div>
-            <form id="chatForm">
-                <input type="text" id="chatInput" autocomplete="off">
-            </form>
-            <div id="gameCaptionDiv">
-                <div class="gameCaptionTextbox">
-                    <p class="smallCaption" id="roundLabel"></p>
-                    <p class="bigCaption" id="roundDisplay"></p>
+            <p>by csaltachin</p>
+        </h1>
+        <div id="gameBox">
+            <div id="canvasBox">
+                <canvas id="drawCanvas" width="720" height="480"></canvas>
+                <div id="penBox">
+                    <div id="penColorBox" class="penInputClass">
+                        <input type="color" id="penColorInput" value="#000000">
+                        <label for="penColorInput">pen color</label>
+                    </div>
+                    <div id="clearButtonBox" class="penInputClass">
+                        <button id="clearButton">clear canvas</button>
+                    </div>
+                    <div id="penSizeBox" class="penInputClass">
+                        <input type="range" id="penSizeInput" min="1" max="25" step="1" value="6" class="penSizeSlider">
+                        <label for="penSizeInput">pen size</label>
+                    </div>
                 </div>
-                <div class="gameCaptionTextbox">
-                    <p class="smallCaption" id="artistLabel"></p>
-                    <p class="bigCaption" id="artistDisplay"></p>
-                </div>
-                <div class="gameCaptionTextbox">
-                    <p class="smallCaption" id="timerLabel"></p>
-                    <p class="bigCaption" id="timerDisplay"></p>
+            </div>
+            <div id="chatBox">
+                <div id="chatContainer"></div>
+                <form id="chatForm">
+                    <input type="text" id="chatInput" autocomplete="off">
+                </form>
+                <div id="gameCaptionDiv">
+                    <div class="gameCaptionTextbox">
+                        <p class="smallCaption" id="roundLabel"></p>
+                        <p class="bigCaption" id="roundDisplay"></p>
+                    </div>
+                    <div class="gameCaptionTextbox">
+                        <p class="smallCaption" id="artistLabel"></p>
+                        <p class="bigCaption" id="artistDisplay"></p>
+                    </div>
+                    <div class="gameCaptionTextbox">
+                        <p class="smallCaption" id="timerLabel"></p>
+                        <p class="bigCaption" id="timerDisplay"></p>
+                    </div>
                 </div>
             </div>
         </div>

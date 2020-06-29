@@ -22,6 +22,11 @@ var CANVAS_LOCKED = true;
 var PEN_COLOR = "#000000";
 var PEN_SIZE = 6;
 
+// DOM elements
+const headerMidBox = document.getElementById("headerMidBox");
+const loginBox = document.getElementById("loginBox");
+const nameForm = document.getElementById("nameForm");
+const nameInput = document.getElementById("nameInput");
 const CAPTIONS = {
     roundLabel: document.getElementById("roundLabel"),
     roundDisplay: document.getElementById("roundDisplay"),
@@ -37,7 +42,7 @@ const chatForm = document.getElementById("chatForm");
 const chatInput = document.getElementById("chatInput");
 const captionDiv = document.getElementById("gameCaptionDiv")
 
-var NAME = prompt("What's your name?");
+var NAME = null;
 var APPENDED = 0;
 const MESSAGE_BG_COLORS = new Map([
     ["red", {bg: "#FF5252", border: "#b51d1d"}],
@@ -134,6 +139,23 @@ socket.on("requestPenUpdateSignal", () => {
     socket.emit("changeSizeSignal", PEN_SIZE);
 });
 
+// Name form listening
+nameForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    let input_name = nameInput.value.trim();
+    if(input_name == "") {
+        // Tell user name cannot be blank?
+        return;
+    }
+    // Set NAME, send to server
+    NAME = input_name;
+    socket.emit("newUserSignal", NAME);
+    artistLabel.textContent = "welcome, ";
+    artistDisplay.textContent = NAME;
+    // Toggle header retract
+    retractHeader();
+});
+
 // Chat form listening
 chatForm.addEventListener("submit", (e) => {
     e.preventDefault();
@@ -152,6 +174,15 @@ chatForm.addEventListener("submit", (e) => {
     else socket.emit("messageSentSignal", chat_message);
     chatInput.value = ""; // Empty input box after sending chat message
 });
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// Header stuff
+function retractHeader() {
+    headerMidBox.classList.add("retractHeader");
+    loginBox.classList.add("retractHeader");
+
+}
 
 // Chat stuff
 function appendChatMessage(name, message) {
@@ -278,6 +309,10 @@ function serverLog(req_str) {
 }
 
 // On start-up
+/*
+//NAME = prompt("What's your name?");
+NAME = "debugName";
 socket.emit("newUserSignal", NAME);
 artistLabel.textContent = "welcome, ";
 artistDisplay.textContent = NAME;
+*/

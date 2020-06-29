@@ -9,14 +9,23 @@ body {
     margin: 0px;
 }
 
+/* Content div */
+#contentDiv {
+    padding: 0px;
+    margin: 0px;
+    border: 0px;
+    height: 100vh;
+    overflow: hidden;
+}
+
 /* Header */
 #headerBox {
     background-color: midnightblue;
     color: rgb(255, 255, 255);
 
-    height: auto;
+    max-height: 100vh;
     margin: 0px;
-    padding: 10px;
+    padding: 0px;
     display: flex;
     flex-direction: row;
     justify-content: space-between;
@@ -24,10 +33,48 @@ body {
 }
 #headerBox p {
     font-size: 34px;
-    padding: 0px;
+    font-weight: bold;
+    padding: 10px;
     padding-left: 30px;
     padding-right: 30px;
     margin: 0px;
+}
+#headerMidBox {
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+#headerMidBox.retractHeader {
+    transition: ease 0.6s;
+    transition-delay: 0.1s;
+    height: 0px;
+}
+#loginBox.retractHeader {
+    transition: 0.4s;
+    opacity: 0;
+}
+
+/* Login box */
+#loginBox {
+    background-color: rgba(37, 172, 226, 0.719);
+    border: solid rgb(26, 69, 80) 1.5px;
+    border-radius: 25px;
+    padding: 20px;
+}
+#loginBox p {
+    font-size: 24px;
+}
+#nameForm {
+    padding: 5px;
+    padding-bottom: 15px;
+}
+#nameInput {
+    font-size: 20px;
+}
+#nameSubmit {
+    font-size: 20px;
 }
 
 /* Game box */
