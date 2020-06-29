@@ -14,16 +14,28 @@
 <body style="background-color: lightblue;">
     <div id="contentDiv">
         <h1 id="headerBox">
-            <p>drawit</p>
+            <p id="headerP">drawit</p>
             <div id="headerMidBox">
                 <div id="loginBox">
+                    <p>welcome!</p>
                     <form id="nameForm">
-                        <input type="text" id="nameInput" placeholder="Enter your nickname..." autocomplete="off">
-                        <input type="submit" id="nameSubmit" value="Start!">
+                        <input type="text" id="nameInput" placeholder="enter your nickname..." autocomplete="off">
+                        <input type="submit" id="nameSubmit" value="start!">
                     </form>
+                    <div id="instructionsBox">
+                        <p>useful commands:</p>
+                        <ul>
+                            <li><b>/name [nickname]</b> | change nickname to [nickname]</li>
+                            <li><b>/open [number]</b> | opens room #[number]</li>
+                            <li><b>/join [number]</b> | joins room #[number]</li>
+                            <li><b>/start [rounds] [draw-time] [choose-time]</b> | start a game in current room, defaults: 
+                            2 rounds per player, 30 seconds for choosing and 90 seconds for drawing</li>
+                            <li><b>/help</b> | shows all commands</li>
+                        </ul>
+                    </div>
                 </div>
             </div>
-            <p>by csaltachin</p>
+            <p id="headerP">by csaltachin</p>
         </h1>
         <div id="gameBox">
             <div id="canvasBox">

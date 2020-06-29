@@ -32,7 +32,7 @@ body {
     align-items: center;
 }
 #headerBox p {
-    font-size: 34px;
+    font-size: 42px;
     font-weight: bold;
     padding: 10px;
     padding-left: 30px;
@@ -42,13 +42,13 @@ body {
 #headerMidBox {
     height: 100vh;
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
     overflow: hidden;
 }
 #headerMidBox.retractHeader {
     transition: ease 0.6s;
-    transition-delay: 0.1s;
     height: 0px;
 }
 #loginBox.retractHeader {
@@ -58,23 +58,45 @@ body {
 
 /* Login box */
 #loginBox {
-    background-color: rgba(37, 172, 226, 0.719);
-    border: solid rgb(26, 69, 80) 1.5px;
+    max-width: 40vw;
+    background-color: rgba(28, 145, 240, 0.89);
+    border: solid rgb(17, 68, 92) 2px;
     border-radius: 25px;
     padding: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 #loginBox p {
-    font-size: 24px;
+    font-size: 32px;
+    padding: 10px;
+    text-align: center;
 }
 #nameForm {
     padding: 5px;
     padding-bottom: 15px;
 }
 #nameInput {
+    width: 86%;
     font-size: 20px;
 }
 #nameSubmit {
     font-size: 20px;
+}
+
+/* Instructions */
+#instructionsBox {
+    font-size: 16px;
+    font-weight: normal;
+    padding: 5px;
+}
+#instructionsBox p {
+    font-size: 24px;
+    padding: 0px;
+    text-align: left;
+}
+#instructionsBox ul {
+    margin-top: 5px;
 }
 
 /* Game box */

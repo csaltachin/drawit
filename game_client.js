@@ -190,7 +190,7 @@ function appendChatMessage(name, message) {
     let new_div = document.createElement("div");
     new_div.className = "messageBox";
     new_div.innerHTML = ` <b>${name}:</b> ${message}`;
-    new_div.style.backgroundColor = APPENDED%2 == 0 ? "#ffffff" : "#d3d3d3";
+    new_div.style.backgroundColor = APPENDED%2 == 0 ? "#ffffff" : "#e6e6e6";
     // Was at scroll bottom?
     //atBottom = chatContainer.scrollTop >= chatContainer.scrollHeight - chatContainer.clientHeight;
     atBottom = Math.ceil(chatContainer.scrollTop) == chatContainer.scrollHeight - chatContainer.clientHeight;
